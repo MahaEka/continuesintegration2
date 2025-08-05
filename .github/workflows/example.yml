@@ -60,7 +60,7 @@ deploy:
      host:${{ secrets.EC2_HOST }}
      username:${{ secrets.EC2_USER }}
      key:${{ secrets.EC2_SSH_KEY }}
-      script: |
+    script: |
          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${REGISTRY}
          docker pull ${REGISTRY}/${REPO_NAME}:latest
          docker stop myapp || true
