@@ -75,8 +75,3 @@ jobs:
         docker run -d --name myapp -p 80:80 $REGISTRY/$REPO_NAME:latest
 
 
-
-
-
-
-
