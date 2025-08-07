@@ -6,51 +6,51 @@ on:
 jobs:
   # === CI этап: Сборка и тестирование Node.js приложения ===
   build-stage:
-    name: Build & Test
-    runs-on: ubuntu-latest
-    steps:
+     name: Build & Test
+     runs-on: ubuntu-latest
+     steps:
       # 1. Клонируем код из репозитори
-      - name: Checkout Code
-        uses: actions/checkout@v4  # Была ошибка: 'chekout' вместо 'checkout'
+       - name: Checkout Code
+         uses: actions/checkout@v4  # Была ошибка: 'chekout' вместо 'checkout'
       # 2. Устанавливаем Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'  # Укажите нужную версию
+       - name: Setup Node.js
+         uses: actions/setup-node@v4
+         with:
+           node-version: '18'  # Укажите нужную версию
       # 3. Устанавливаем зависимости
-      - name: Install dependencies
-        run: npm install  # Была ошибка: 'Install' вместо 'install'
+       - name: Install dependencies
+         run: npm install  # Была ошибка: 'Install' вместо 'install'
       # 4. Запускаем тесты
-      - name: Run Test
-        run: npm test
+       - name: Run Test
+         run: npm test
   # === Этап: Сборка и пуш Docker образа в AWS ECR ===
   docker-build-push:
     name: Build & Push Docker Image
     needs: build-stage  # Была ошибка: было 'build-test'
     runs-on: ubuntu-latest  # Была ошибка: было 'ubuntu-test'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+       - name: Checkout code
+         uses: actions/checkout@v4
       # 1. Настройка AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-1
+       - name: Configure AWS credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: us-west-1
       # 2. Вход в Amazon ECR
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+       - name: Login to Amazon ECR
+         id: login-ecr
+         uses: aws-actions/amazon-ecr-login@v2
       # 3. Сборка и тег Docker образа
-      - name: Build docker Image
-        run: |
-          IMAGE_TAG=latest  # Была ошибка: 'IMAGE_TAG_Latest'
-          docker build -t myapp:$IMAGE_TAG .
-          docker tag myapp:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/myapp:$IMAGE_TAG
+       - name: Build docker Image
+         run: |
+            IMAGE_TAG=latest  # Была ошибка: 'IMAGE_TAG_Latest'
+            docker build -t myapp:$IMAGE_TAG .
+            docker tag myapp:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/myapp:$IMAGE_TAG
       # 4. Пуш в ECR
-      - name: Push Docker Image
-        run: |
+       - name: Push Docker Image
+          run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/myapp:latest
   # === Этап: Деплой на EC2 через SSH ===
   deploy:
@@ -58,22 +58,17 @@ jobs:
     needs: docker-build-push
     runs-on: ubuntu-latest
     steps:
-      - name: Test SSH
+      - name: Deploy to  SSH
+       
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}  # Было неправильно: снова EC2_HOST
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p ~/.aws
-            echo "[default]" > ~/.aws/credentials
-            echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
-            echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
-            REGISTRY=619071316700.dkr.ecr.us-west-1.amazonaws.com
-            REPO_NAME=myapp
-            aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin $REGISTRY
+            
             sudo fuser -k 80/tcp || true
             docker pull $REGISTRY/$REPO_NAME:latest
             docker stop myapp || true
             docker rm myapp || true
-            docker run -d --name myapp -p 80:80 $REGISTRY/$REPO_NAME:latest
+            docker run -d --name myapp -p 89:80 $REGISTRY/$REPO_NAME:latest
