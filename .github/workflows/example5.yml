@@ -50,7 +50,7 @@ jobs:
             docker tag myapp:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/myapp:$IMAGE_TAG
       # 4. Пуш в ECR
        - name: Push Docker Image
-          run: |
+         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/myapp:latest
   # === Этап: Деплой на EC2 через SSH ===
   deploy:
